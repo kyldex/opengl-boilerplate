@@ -36,6 +36,27 @@ const GLchar* fragmentSource = R"glsl(
     }
 )glsl";
 
+GLuint compileShader(GLenum type, const GLchar* source)
+{
+    GLuint id = glCreateShader(type);
+    glShaderSource(id, 1, &source, NULL);
+    glCompileShader(id);
+    
+    GLint status;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        int length;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+        char* message = (char*)alloca(length * sizeof(char));
+        glGetShaderInfoLog(id, length, &length, message);
+        std::cout <<"Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader"<< std::endl;
+        std::cout << message << std::endl;
+    }
+    
+    return id;
+}
+
 int main(void)
 {
     /* Initialize GLFW */
@@ -112,35 +133,13 @@ int main(void)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
     
-    // Create and compile the vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, NULL);
-    // Compile the shader into code that can be executed by the graphics card.
-    glCompileShader(vertexShader);
-    GLint status;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-    if (status == GL_TRUE)
-    {
-        printf("Vertex shader compiled successfully\n");
-    }
-    
-    // Create and compile the fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-    if (status == GL_TRUE)
-    {
-        printf("Fragment shader compiled successfully\n");
-    }
-    
     // Create program
     GLuint shaderProgram = glCreateProgram();
+    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexSource);
+    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
+    
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
-    // Since this is 0 by default and there's only one output right now,
-    // the following line of code is not necessary:
-    glBindFragDataLocation(shaderProgram, 0, "outColor");
     glLinkProgram(shaderProgram);
     // Just like a vertex buffer, only one program can be active at a time.
     glUseProgram(shaderProgram);
