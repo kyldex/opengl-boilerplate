@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <chrono>
 #include <cmath>
 
@@ -8,38 +10,49 @@
 // Link statically with GLEW
 #define GLEW_STATIC
 
-// Shader sources
-const GLchar* vertexSource = R"glsl(
-    #version 410 core
+struct ShaderProgramSource
+{
+    std::string vertexSource;
+    std::string fragmentSource;
+};
 
-    in vec2 position;
-    in vec3 color;
-
-    out vec3 Color;
-
-    void main()
-    {
-        Color = color;
-        gl_Position = vec4(position, 0.0, 1.0);
-    }
-)glsl";
-const GLchar* fragmentSource = R"glsl(
-    #version 410 core
+ShaderProgramSource parseShader(const std::string& filepath)
+{
+    std::ifstream stream(filepath);
     
-    in vec3 Color;
-    uniform vec3 uniColor;
-    out vec4 outColor;
-
-    void main()
+    enum class ShaderType
     {
-        outColor = vec4(uniColor.x, Color.y, Color.z, 1.0);
+        NONE = -1, VERTEX = 0, FRAGMENT = 1
+    };
+    
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+    
+    while (getline(stream, line))
+    {
+        if (line.find("shader") != std::string::npos)
+        {
+            if (line.find("#Vertex") != std::string::npos)
+            {
+                type = ShaderType::VERTEX;
+            } else if (line.find("#Fragment") != std::string::npos)
+            {
+                type = ShaderType::FRAGMENT;
+            }
+        } else {
+            ss[(int)type] << line << '\n';
+        }
     }
-)glsl";
 
-GLuint compileShader(GLenum type, const GLchar* source)
+    return { ss[0].str(), ss[1].str() };
+}
+
+GLuint compileShader(GLenum type, const std::string& source)
 {
     GLuint id = glCreateShader(type);
-    glShaderSource(id, 1, &source, NULL);
+    const char* src = source.c_str();
+    glShaderSource(id, 1, &src, NULL);
     glCompileShader(id);
     
     GLint status;
@@ -133,10 +146,15 @@ int main(void)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
     
+    // Copy files build phase in Xcode project settings.
+    // When Xcode builds the project, the input files (shaders) will be copied to the same folder as the executable.
+    // https://stackoverflow.com/a/23449331
+    ShaderProgramSource source = parseShader("basic.shader.glsl");
+    
     // Create program
     GLuint shaderProgram = glCreateProgram();
-    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexSource);
-    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
+    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, source.vertexSource);
+    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, source.fragmentSource);
     
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
