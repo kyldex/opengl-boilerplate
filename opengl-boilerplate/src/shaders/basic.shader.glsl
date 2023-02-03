@@ -16,10 +16,10 @@ void main()
 #version 410 core
     
 in vec3 Color;
-uniform vec3 uniColor;
+uniform vec3 u_Color;
 out vec4 outColor;
 
 void main()
 {
-    outColor = vec4(uniColor.x, Color.y, Color.z, 1.0);
+    outColor = vec4(u_Color.x, Color.y, Color.z, 1.0);
 }

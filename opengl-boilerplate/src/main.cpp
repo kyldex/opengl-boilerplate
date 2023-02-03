@@ -88,12 +88,6 @@ int main(void)
     /* Create a windowed mode window and its OpenGL context */
     GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Boilerplate", NULL, NULL);
     
-    // Fullscreen
-    // GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL", glfwGetPrimaryMonitor(), NULL);
-    // Escape key to easily return to the desktop.
-    // if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    //     glfwSetWindowShouldClose(window, GL_TRUE);
-
     if (!window)
     {
         glfwTerminate();
@@ -171,11 +165,11 @@ int main(void)
     glEnableVertexAttribArray(posAttrib);
     
     GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-    glEnableVertexAttribArray(colAttrib);
     glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
+    glEnableVertexAttribArray(colAttrib);
     
     // Get the location of the color uniform.
-    GLint uniColor = glGetUniformLocation(shaderProgram, "uniColor");
+    GLint u_ColorLocation = glGetUniformLocation(shaderProgram, "u_Color");
 
     auto t_start = std::chrono::high_resolution_clock::now();
     
@@ -184,7 +178,7 @@ int main(void)
     {
         auto t_now = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
-        glUniform3f(uniColor, (sin(time * 4.0f) + 3.0f) / 4.0f, 0.0f, 0.0f);
+        glUniform3f(u_ColorLocation, (sin(time * 4.0f) + 3.0f) / 4.0f, 0.0f, 0.0f);
         
         // Clear color
         glClear(GL_COLOR_BUFFER_BIT);
